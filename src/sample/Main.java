@@ -20,7 +20,7 @@ public class Main extends Application {
         // Loading the FXML file of login
         Parent root = FXMLLoader.load(getClass().getResource("views/login.fxml"));
         primaryStage.initStyle(StageStyle.DECORATED);
-        primaryStage.setTitle("Library Management System");
+        primaryStage.setTitle("EduLib System");
         primaryStage.setResizable(false);
         primaryStage.getIcons().add(new Image("https://static.thenounproject.com/png/3314579-200.png"));
         primaryStage.setScene(new Scene(root));

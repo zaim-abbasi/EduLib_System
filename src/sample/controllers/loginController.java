@@ -70,7 +70,7 @@ public class loginController {
             Scene scene = new Scene(parent);
             Stage primaryStage = new Stage();
             primaryStage.setScene(scene);
-            primaryStage.setTitle("Library Management System");
+            primaryStage.setTitle("EduLib System");
             primaryStage.getIcons().add(new Image("https://static.thenounproject.com/png/3314579-200.png"));
             primaryStage.show();
         } catch (IOException ex) {

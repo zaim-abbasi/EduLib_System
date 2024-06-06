@@ -23,7 +23,15 @@ public final class DatabaseHandler {
         createConnection();
     }
 
-    public static DatabaseHandler getInstance() {
+    // public static DatabaseHandler getInstance() {
+    //     if (handler == null) {
+    //         handler = new DatabaseHandler();
+    //     }
+    //     return handler;
+    // }
+
+
+    public static synchronized DatabaseHandler getInstance() {
         if (handler == null) {
             handler = new DatabaseHandler();
         }
