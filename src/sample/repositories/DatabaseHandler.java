@@ -1,39 +1,28 @@
 package sample.repositories;
 
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.chart.PieChart;
 import sample.controllers.booklistController;
 import sample.controllers.viewMembersController;
+import sample.controllers.booklistController.Book;
 
 import javax.swing.*;
-import java.sql.*;
 
-// This class handles the database connection
+import java.sql.*;
 
 public final class DatabaseHandler {
 
-    // private static final String databaseName = "EDULIB_Final";
-    // private static final String DB_URL = "jdbc:mysql://127.0.0.1/" + databaseName;
-
     private static final String DB_URL = "jdbc:mysql://localhost:3306/EDULIB_Final";
 
-    // Variables used for connecting to the database and creating statements
-    // Change these values to your mySQL values
     private static DatabaseHandler handler = null;
     private static Connection conn = null;
-    private static Statement stmt = null;
+    private static Statement statement = null;
 
-
-    // Constructor of the class has methods that are called when the class is instantiated
     public DatabaseHandler() {
         createConnection();
-        setupBookTable();
-        setupIssuedBooksTable();
     }
 
-    // If there is no instance of the class we get the instance
     public static DatabaseHandler getInstance() {
         if (handler == null) {
             handler = new DatabaseHandler();
@@ -53,80 +42,21 @@ public final class DatabaseHandler {
         }
     }
 
-    // Setting up the table to add books, or this can be done manually in mySQL
-    void setupBookTable() {
-        String TABLE_NAME = "addBook";
-        try {
-            stmt = conn.createStatement();
-            DatabaseMetaData dbm = conn.getMetaData();
-            ResultSet tables = dbm.getTables(null, null, TABLE_NAME, null);
-            if (tables.next()) {
-                System.out.println("Table " + TABLE_NAME + " already exists.");
-            } else {
-                stmt.execute("CREATE TABLE" + TABLE_NAME + "("
-                        + " id varchar(200) not null ,"
-                        + " title varchar(200) not null ,"
-                        + " author varchar(200) not null ,"
-                        + " publisher varchar(200) not null ,"
-                        + " quantity int not null ,"
-                        + " isAvail boolean default true,"
-                        + " primary key(id)"
-                        + ")");
-            }
-        } catch (SQLException ex) {
-            System.err.println(ex.getMessage() + " ...setupDatabase");
-        }
-    }
-
-
-    // Setting up the table for issued books
-    void setupIssuedBooksTable() {
-        String TABLE_NAME = "issuedBooks";
-        try {
-            stmt = conn.createStatement();
-            DatabaseMetaData dbm = conn.getMetaData();
-            ResultSet tables = dbm.getTables(null, null, TABLE_NAME, null);
-            if (tables.next()) {
-                System.out.println("Table " + TABLE_NAME + " already exists.");
-            } else {
-                stmt.execute("CREATE TABLE " + TABLE_NAME + "("
-                        + " bookID varchar(200) not null ,"
-                        + " memberID varchar(200) not null ,"
-                        + " issueTime timestamp default CURRENT_TIMESTAMP,"
-                        + " renew_count integer default 0 ,"
-                        + " primary key(bookID,memberID),"
-                        + " foreign key(bookID) references addBook(id),"
-                        + " foreign key(memberID) references addMember(memberID)"
-                        + ")");
-            }
-        } catch (SQLException ex) {
-            System.err.println(ex.getMessage() + " ...setupDatabase");
-        }
-    }
-
-    // A method that returns a ResultSet, this is used to execute queries
     public ResultSet execQuery(String query) {
-        ResultSet result;
         try {
-            stmt = conn.createStatement();
-            result = stmt.executeQuery(query);
+            return conn.createStatement().executeQuery(query);
         } catch (SQLException ex) {
-            System.out.println("Exception at execQuery:dataHandler" + ex.getLocalizedMessage());
+            System.out.println("Exception at execQuery: " + ex.getMessage());
             return null;
         }
-
-        return result;
     }
 
-    // A method that returns boolean values, used to inform if the action was successfully executed
-    public boolean execAction(String qu) {
+    public boolean execAction(String query) {
         try {
-            stmt = conn.createStatement();
-            stmt.execute(qu);
+            conn.createStatement().execute(query);
             return true;
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, "Error:" + ex.getMessage(), "Error Occurred", JOptionPane.ERROR_MESSAGE);
-            System.out.println("Exception at execQuery:dataHandler " + ex.getLocalizedMessage());
+            System.out.println("Exception at execAction: " + ex.getMessage());
             return false;
         }
     }
@@ -134,126 +64,104 @@ public final class DatabaseHandler {
     // Graphs
     public ObservableList<PieChart.Data> getBookGraphicStatistics() {
         ObservableList<PieChart.Data> data = FXCollections.observableArrayList();
+
         try {
-            String query1 = "SELECT COUNT(*) FROM addBook";
-            String query2 = "SELECT COUNT(*) FROM issuedBooks";
+            int totalBooks = getBookCount("SELECT COUNT(*) FROM addBook");
+            data.add(new PieChart.Data("Total Books (" + totalBooks + ")", totalBooks));
 
-            ResultSet rs = execQuery(query1);
-            if (rs.next()) {
-                int count = rs.getInt(1);
-                data.add(new PieChart.Data("Total Books (" + count + ")", count));
-            }
+            int issuedBooks = getBookCount("SELECT COUNT(*) FROM issuedBooks");
+            data.add(new PieChart.Data("Issued Copies Of Books (" + issuedBooks + ")", issuedBooks));
 
-            ResultSet rs2 = execQuery(query2);
-            if (rs2.next()) {
-                int count = rs2.getInt(1);
-                data.add(new PieChart.Data("Issued Copies Of Books (" + count + ")", count));
-            }
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (SQLException ex) {
+            System.out.println("Error fetching book statistics: " + ex.getMessage());
         }
+
         return data;
     }
 
+    private int getBookCount(String query) throws SQLException {
+        ResultSet rs = execQuery(query);
+        return rs.next() ? rs.getInt(1) : 0;
+    }
 
     public ObservableList<PieChart.Data> getMemberGraphicStatistics() {
         ObservableList<PieChart.Data> data = FXCollections.observableArrayList();
+
         try {
-            String query1 = "SELECT COUNT(*) FROM addMember";
-            String query2 = "SELECT COUNT(DISTINCT memberID) FROM issuedBooks";
+            int totalMembers = getmemberCount("SELECT COUNT(*) FROM addMember");
+            data.add(new PieChart.Data("Total Members (" + totalMembers + ")", totalMembers));
 
-            ResultSet rs = execQuery(query1);
-            if (rs.next()) {
-                int count = rs.getInt(1);
-                data.add(new PieChart.Data("Total Members (" + count + ")", count));
-            }
+            int membersWithBooks = getmemberCount("SELECT COUNT(DISTINCT memberID) FROM issuedBooks");
+            data.add(new PieChart.Data("Members With Books (" + membersWithBooks + ")", membersWithBooks));
 
-            ResultSet rs2 = execQuery(query2);
-            if (rs2.next()) {
-                int count = rs2.getInt(1);
-                data.add(new PieChart.Data("Members With Books (" + count + ")", count));
-            }
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (SQLException ex) {
+            System.out.println("Error fetching member statistics: " + ex.getMessage());
         }
+
         return data;
-
     }
 
-    // Deleting members
+    private int getmemberCount(String query) throws SQLException {
+        ResultSet rs = execQuery(query);
+        return rs.next() ? rs.getInt(1) : 0;
+    }
+
     public boolean deleteMember(viewMembersController.Member member) {
-        try {
-            String deleteStatement = "Delete from addMember where memberID = ?";
-            PreparedStatement stmt = conn.prepareStatement(deleteStatement);
-            stmt.setString(1, member.getMemberID());
-            int res = stmt.executeUpdate();
-            if (res == 1) {
-                return true;
-            }
+        String deleteStatement = "DELETE FROM addMember WHERE memberID = ?";
+        try (PreparedStatement statement = conn.prepareStatement(deleteStatement)) {
+            statement.setString(1, member.getMemberID());
+            return statement.executeUpdate() == 1;
         } catch (SQLException ex) {
-            //Logger.getLogger(DatabaseHandler.class.getName().log(Level.SEVERE,null,ex));
+            // Handle or log the exception
+            System.out.println("Exception while deleting member: " + ex.getMessage());
+            return false;
         }
-        return false;
     }
 
-    // Deleting books
     public boolean deleteBook(booklistController.Book book) {
-        try {
-            String deleteStatement = "Delete from addBook where id = ?";
-            PreparedStatement stmt = conn.prepareStatement(deleteStatement);
-            stmt.setString(1, book.getBookID());
-            int res = stmt.executeUpdate();
-            if (res == 1) {
-                return true;
-            }
+        String deleteStatement = "DELETE FROM addBook WHERE id = ?";
+        try (PreparedStatement statement = conn.prepareStatement(deleteStatement)) {
+            statement.setString(1, book.getBookID());
+            return statement.executeUpdate() == 1;
         } catch (SQLException ex) {
-            //Logger.getLogger(DatabaseHandler.class.getName().log(Level.SEVERE,null,ex));
+            // Handle or log the exception
+            System.out.println("Exception while deleting book: " + ex.getMessage());
+            return false;
         }
-        return false;
     }
 
     // Updating members
-    public boolean updateMember(viewMembersController.Member member) {
-        String update = "UPDATE addMember SET name =? , email = ? , phone = ? where memberID = ?";
-        try {
-            PreparedStatement stmt = conn.prepareStatement(update);
-            stmt.setString(1, member.getName());
-            stmt.setString(2, member.getEmail());
-            stmt.setString(3, member.getPhone());
-            stmt.setString(4, member.getMemberID());
+    public boolean updateMember(viewMembersController.Member updatedMember) {
+        String updateQuery = "UPDATE addMember SET name = ?, email = ?, phone = ? WHERE memberID = ?";
+        try (PreparedStatement statement = conn.prepareStatement(updateQuery)) {
+            statement.setString(1, updatedMember.getName());
+            statement.setString(2, updatedMember.getEmail());
+            statement.setString(3, updatedMember.getPhone());
+            statement.setString(4, updatedMember.getMemberID());
 
-
-            int res = stmt.executeUpdate();
-
-            return (res > 0);
-
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+            int rowsAffected = statement.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException ex) {
+            System.out.println("Error updating member: " + ex.getMessage());
+            return false;
         }
-        return false;
     }
 
     // Updating books
-    public boolean updateBook(booklistController.Book book) {
-        String update = "UPDATE addBook SET title =? , author = ? , publisher = ?,quantity = ? where id = ?";
-        try {
-            PreparedStatement stmt = conn.prepareStatement(update);
-            stmt.setString(1, book.getTitle());
-            stmt.setString(2, book.getAuthor());
-            stmt.setString(3, book.getPublisher());
-            stmt.setInt(4, book.getQuantity());
-            stmt.setString(5, book.getBookID());
+    public boolean updateBook(booklistController.Book updatedBook) {
+        String updateQuery = "UPDATE addBook SET title = ?, author = ?, publisher = ?, quantity = ? WHERE id = ?";
+        try (PreparedStatement statement = conn.prepareStatement(updateQuery)) {
+            statement.setString(1, updatedBook.getTitle());
+            statement.setString(2, updatedBook.getAuthor());
+            statement.setString(3, updatedBook.getPublisher());
+            statement.setInt(4, updatedBook.getQuantity());
+            statement.setString(5, updatedBook.getBookID());
 
-
-            int res = stmt.executeUpdate();
-
-            return (res > 0);
-
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+            int rowsAffected = statement.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException ex) {
+            System.out.println("Error updating book: " + ex.getMessage());
+            return false;
         }
-        return false;
     }
 }

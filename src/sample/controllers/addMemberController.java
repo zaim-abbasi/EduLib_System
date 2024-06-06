@@ -13,7 +13,6 @@ import java.net.URL;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-
 // This is a controller for adding members to the database
 public class addMemberController implements Initializable {
 
@@ -41,122 +40,71 @@ public class addMemberController implements Initializable {
 
     private Boolean isInEditMode = Boolean.FALSE;
 
-    public static boolean onlyDigits(String str, int n) {
-        for (int i = 1; i < n; i++) {
-
-            if (Character.isDigit(str.charAt(i))) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        return false;
-    }
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         databaseHandler = new DatabaseHandler();
     }
 
-
-
     @FXML
-    // If the users click the save button , this is executed
     private void saveButton(ActionEvent actionEvent) {
-
         String mID = memberID.getText();
         String mName = name.getText();
         String mEmail = email.getText();
         String mPhone = phone.getText();
-        String mGender = "";
-        if (male.isSelected()) {
-            mGender = "male";
-        } else if (female.isSelected()) {
-            mGender = "female";
-        }
-        ;
+        String mGender = male.isSelected() ? "male" : (female.isSelected() ? "female" : "");
 
-        if(isInEditMode){
+        if (isInEditMode) {
             handleEditOperation();
             return;
         }
 
-        if (mID.isEmpty() || mName.isEmpty() || mEmail.isEmpty() || mPhone.isEmpty() || mGender.isEmpty()){
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("All fields are required. Please fill them out!");
-            alert.showAndWait();
-            return;
-        }
-        else if (!mID.matches("[0-9]+")) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("Member ID must contain only numbers!");
-            alert.showAndWait();
-            return;
-        }
-        else if (!mName.matches("^[a-zA-Z\\s]*$")) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("Name must contain only letters and whitespaces!");
-            alert.showAndWait();
-            return;
-        }
-        else if (!mEmail.matches("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$")) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("The email you typed is not valid!");
-            alert.showAndWait();
-            return;
-        } else if (!mPhone.matches("^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\\s\\./0-9]*$")) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("Invalid Phone Number");
-            alert.showAndWait();
+        if (mID.isEmpty() || mName.isEmpty() || mEmail.isEmpty() || mPhone.isEmpty() || mGender.isEmpty()) {
+            showAlert("ERROR", "All fields are required. Please fill them out!");
             return;
         }
 
+        String query = "INSERT INTO addMember (memberID, name, email, phone, gender) VALUES ('"
+                + mID + "', '"
+                + mName + "', '"
+                + mEmail + "', '"
+                + mPhone + "', '"
+                + mGender + "')";
 
-        String qu = "INSERT INTO addMember VALUES (" +
-                "'" + mID + "'," +
-                "'" + mName + "'," +
-                "'" + mEmail + "'," +
-                "'" + mPhone + "'," +
-                "'" + mGender + "' " +
-                ")";
-
-        if (databaseHandler.execAction(qu)) {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setHeaderText("SUCCESS");
-            alert.setContentText("New member succesfully added!");
-            alert.showAndWait();
-            clear();
-
+        if (databaseHandler.execAction(query)) {
+            showAlert("SUCCESS", "New member successfully added!");
         } else {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("Sorry, we couldn't add this member!");
-            alert.showAndWait();
-            clear();
-
+            showAlert("ERROR", "Sorry, we couldn't add this member!");
         }
+
+        clear();
+    }
+
+    private void showAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setHeaderText(title);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 
     private void handleEditOperation() {
-        String gender = "female";
-        viewMembersController.Member member = new viewMembersController.Member(memberID.getText(),name.getText(),email.getText(),phone.getText(), gender);
-        if(databaseHandler.updateMember(member)){
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setHeaderText("SUCCESS");
-            alert.setContentText("Success! Member updated");
-            alert.showAndWait();
-            clear();
-        }else{
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("Error");
-            alert.setContentText("Failed ! Member can not be updated");
-            alert.showAndWait();
-            clear();
+        String gender = "female"; // Default gender set to female
+        String memberId = memberID.getText();
+        String memberName = name.getText();
+        String memberEmail = email.getText();
+        String memberPhone = phone.getText();
+
+        // Create a Member object with the updated information
+        viewMembersController.Member member = new viewMembersController.Member(memberId, memberName, memberEmail,
+                memberPhone, gender);
+
+        // Update the member in the database and show appropriate feedback
+        if (databaseHandler.updateMember(member)) {
+            showAlert("SUCCESS", "Success! Member updated");
+        } else {
+            showAlert("ERROR", "Failed! Member cannot be updated");
         }
+
+        clear(); // Clear form fields after operation
     }
 
     // Clearing the window after the save button is clicked
@@ -170,28 +118,28 @@ public class addMemberController implements Initializable {
         check.setSelected(false);
     }
 
-    // A method to close the window if user clicks the close button
+    // close the window if user clicks the close button
     @FXML
     private void cancelButton(ActionEvent actionEvent) {
         ((Stage) rootPane.getScene().getWindow()).close();
     }
 
-    public void inflatedUI (viewMembersController.Member member){
-        String gender = member.getGender();
+    public void inflatedUI(viewMembersController.Member member) {
+        // Set member details in the UI fields
         memberID.setText(member.getMemberID());
         name.setText(member.getName());
         email.setText(member.getEmail());
         phone.setText(member.getPhone());
         memberID.setEditable(false);
-        isInEditMode = Boolean.TRUE;
-        female.setSelected(true);
-        if(gender.toLowerCase() == "male"){
+        isInEditMode = true;
+
+        // Set gender radio button based on member's gender
+        String gender = member.getGender().toLowerCase();
+        if (gender.equals("male")) {
             male.setSelected(true);
-        }else if (gender.toLowerCase() == "female"){
+        } else if (gender.equals("female")) {
             female.setSelected(true);
         }
-
-
     }
 
 }

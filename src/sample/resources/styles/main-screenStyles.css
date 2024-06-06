@@ -74,22 +74,5 @@
 }
 
 
-.data0.chart-pie { -fx-pie-color: teal; }
-.data1.chart-pie { -fx-pie-color: cyan; }
-
-/*.chart {
-    -fx-pref-width: 150;
-    -fx-pref-height: 150;
-    -fx-min-width: 150;
-    -fx-min-height: 150;
-    -fx-max-width: 150;
-    -fx-max-height: 150;
-}
-
-.chart-content {
-    -fx-padding: 10;
-}*/
-
-
-
-
+.data0.chart-pie { -fx-pie-color: rgb(13, 70, 240); }
+.data1.chart-pie { -fx-pie-color: rgb(65, 110, 212); }

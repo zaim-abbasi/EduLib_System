@@ -14,10 +14,7 @@ import sample.repositories.DatabaseHandler;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-
-// This is a controller to handle the add book functionality
 public class addBookController implements Initializable {
-
 
     DatabaseHandler databaseHandler;
     @FXML
@@ -41,114 +38,77 @@ public class addBookController implements Initializable {
 
     private Boolean isInEditMode = Boolean.FALSE;
 
-    public static boolean onlyDigits(String str, int n) {
-        for (int i = 1; i < n; i++) {
-
-            if (Character.isDigit(str.charAt(i))) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        return false;
-    }
-
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         databaseHandler = new DatabaseHandler();
     }
 
-    // If the user clicks the save button
     @FXML
     private void saveAction(ActionEvent actionEvent) {
-
         String bookId = id.getText();
         String bookName = title.getText();
         String bookAuthor = author.getText();
         String bookPublisher = publisher.getText();
         String bookQuantity = quantity.getText();
-        boolean onlyDigits = onlyDigits(bookId, bookId.length());
 
-        if(isInEditMode){
+        if (isInEditMode) {
             handleEditOperation();
             return;
         }
-        // Validating the fields
-        if (bookId.isEmpty() || bookAuthor.isEmpty() || bookName.isEmpty() || bookPublisher.isEmpty() || bookQuantity.isEmpty() || !check.isSelected()) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("All fields are required. Please fill them out!");
-            alert.showAndWait();
-            return;
-        } else if (onlyDigits == false && !bookId.startsWith("B")) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("ID of book should start with letter 'B' followed by digits!");
-            alert.showAndWait();
-            return;
-        } else if (!bookAuthor.matches("[a-zA-Z ]+")) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("Author name should contain only letters!");
-            alert.showAndWait();
-            return;
-        } else if (bookPublisher.matches("[0-9]+")) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("Publisher name can't contain only numbers!");
-            alert.showAndWait();
-            return;
-        } else if (!bookQuantity.matches("[0-9]+")) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("Quantity should only contain numbers!");
-            alert.showAndWait();
+
+        if (areFieldsEmpty(bookId, bookName, bookAuthor, bookPublisher, bookQuantity)) {
+            showAlert("ERROR", "All fields are required. Please fill them out!");
             return;
         }
 
-        // If all fields are OK we add the values to the database
-        String qu = "INSERT INTO addBook VALUES (" +
-                "'" + bookId + "'," +
-                "'" + bookName + "'," +
-                "'" + bookAuthor + "'," +
-                "'" + bookPublisher + "'," +
-                "'" + bookQuantity + "'," +
-                "" + true + "" +
-                ")";
+        addBookToDatabase(bookId, bookName, bookAuthor, bookPublisher, bookQuantity);
+        clear();
+    }
 
-        if (databaseHandler.execAction(qu)) {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setHeaderText("SUCCESS");
-            alert.setContentText("New book successfully added!");
-            alert.showAndWait();
-            clear();
+    private boolean areFieldsEmpty(String bookId, String bookName, String bookAuthor, String bookPublisher,
+            String bookQuantity) {
+        return bookId.isEmpty() || bookAuthor.isEmpty() || bookName.isEmpty() || bookPublisher.isEmpty()
+                || bookQuantity.isEmpty() || !check.isSelected();
+    }
 
+    private void addBookToDatabase(String bookId, String bookName, String bookAuthor, String bookPublisher,
+            String bookQuantity) {
+        String query = String.format(
+                "INSERT INTO addBook (id, title, author, publisher, quantity, isAvail) VALUES ('%s', '%s', '%s', '%s', '%s', true)",
+                bookId, bookName, bookAuthor, bookPublisher, bookQuantity);
+
+        if (databaseHandler.execAction(query)) {
+            showAlert("SUCCESS", "New book successfully added!");
         } else {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("Sorry, we couldn't add this book!");
-            alert.showAndWait();
-            clear();
-
+            showAlert("ERROR", "Sorry, we couldn't add this book!");
         }
+    }
+
+    private void showAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setHeaderText(title);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 
     private void handleEditOperation() {
-        booklistController.Book book = new booklistController.Book(id.getText(),title.getText(),author.getText(),publisher.getText(), Integer.parseInt(quantity.getText()), true);
-        if(databaseHandler.updateBook(book)){
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setHeaderText("SUCCESS");
-            alert.setContentText("Success! Book updated");
-            alert.showAndWait();
-            clear();
-        }else{
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("Error");
-            alert.setContentText("Failed ! Book can not be updated");
-            alert.showAndWait();
-            clear();
+        booklistController.Book book = new booklistController.Book(
+                id.getText(),
+                title.getText(),
+                author.getText(),
+                publisher.getText(),
+                Integer.parseInt(quantity.getText()),
+                true);
+
+        if (databaseHandler.updateBook(book)) {
+            showAlert("SUCCESS", "Success! Book updated");
+        } else {
+            showAlert("ERROR", "Failed! Book cannot be updated");
         }
+
+        clear();
     }
+
     // Clearing the fields after save button is clicked
     void clear() {
         id.setText("");
@@ -165,19 +125,18 @@ public class addBookController implements Initializable {
         ((Stage) rootPane.getScene().getWindow()).close();
     }
 
-    public void inflatedBUI (booklistController.Book book){
+    public void inflatedBUI(booklistController.Book book) {
+        setBookFields(book);
+        isInEditMode = true;
+        id.setEditable(false);
+    }
 
+    private void setBookFields(booklistController.Book book) {
         id.setText(book.getBookID());
         author.setText(book.getAuthor());
         publisher.setText(book.getPublisher());
         title.setText(book.getTitle());
         quantity.setText(book.getQuantity().toString());
-
-        isInEditMode = Boolean.TRUE;
-
-        id.setEditable(false);
-
-
     }
 
 }

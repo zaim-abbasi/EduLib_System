@@ -1,4 +1,5 @@
 package sample.controllers;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -14,8 +15,11 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import sample.repositories.DatabaseConnection;
 
+import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 public class loginController {
@@ -31,45 +35,50 @@ public class loginController {
     @FXML
     private PasswordField passwordPasswordField;
 
-    private static Connection connectDB=null;
+    private static Connection connectDB = null;
 
     public void loginButtonOnAction(ActionEvent e) {
-        if(!usernameTextField.getText().isBlank() && !passwordPasswordField.getText().isBlank()) {
-            // loginMessageLabel.setText("You try to login!");
-            DatabaseConnection connectNow = new DatabaseConnection();
-            connectDB = connectNow.getConnection();
+        String username = usernameTextField.getText();
+        String password = passwordPasswordField.getText();
 
-            String verifyLogin = "select count(1) from userAccount where username = '" + usernameTextField.getText() + "' and password = '" + passwordPasswordField.getText() + "'";
-            try {
-                Statement statement = connectDB.createStatement();
-                ResultSet queryResult = statement.executeQuery(verifyLogin);
+        if (username.isEmpty() || password.isEmpty()) {
+            loginMessageLabel.setText("Please enter both username and password.");
+            return;
+        }
 
-                while(queryResult.next()) {
-                    if(queryResult.getInt(1) == 1) {
-                        //loginMessageLabel.setText("Welcome!");
-                        Parent parent = FXMLLoader.load(getClass().getResource("../views/main-screen.fxml"));
-                        Scene scene = new Scene(parent);
-                        Stage primaryStage=new Stage();
-                        primaryStage.initStyle(StageStyle.DECORATED);
-                        primaryStage = (Stage) ((Node) e.getSource()).getScene().getWindow();
+        try (Connection connectDB = new DatabaseConnection().getConnection();
+                PreparedStatement preparedStatement = connectDB.prepareStatement(
+                        "SELECT COUNT(1) FROM userAccount WHERE username = ? AND password = ?")) {
 
-                        primaryStage.setScene(scene);
-                        primaryStage.setTitle("Library Management System");
-                        primaryStage.getIcons().add(new Image("https://static.thenounproject.com/png/3314579-200.png"));
-                        primaryStage.show();
-                    } else {
-                        loginMessageLabel.setText("Invalid Login. Please try again.");
-                    }
-                }
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            preparedStatement.setString(1, username);
+            preparedStatement.setString(2, password);
+            ResultSet queryResult = preparedStatement.executeQuery();
+
+            if (queryResult.next() && queryResult.getInt(1) == 1) {
+                navigateToMainScreen();
+            } else {
+                loginMessageLabel.setText("Invalid login credentials. Please try again.");
             }
-        } else {
-            loginMessageLabel.setText("Please enter username and password.");
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
     }
 
-    public void cancelButtonOnAction(ActionEvent e){
+    private void navigateToMainScreen() {
+        try {
+            Parent parent = FXMLLoader.load(getClass().getResource("../views/main-screen.fxml"));
+            Scene scene = new Scene(parent);
+            Stage primaryStage = new Stage();
+            primaryStage.setScene(scene);
+            primaryStage.setTitle("Library Management System");
+            primaryStage.getIcons().add(new Image("https://static.thenounproject.com/png/3314579-200.png"));
+            primaryStage.show();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void cancelButtonOnAction(ActionEvent e) {
         Stage stage = (Stage) cancelButton.getScene().getWindow();
         stage.close();
     }

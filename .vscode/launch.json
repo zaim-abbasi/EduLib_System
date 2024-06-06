@@ -6,14 +6,6 @@
   "configurations": [
     {
       "type": "java",
-      "name": "Main",
-      "request": "launch",
-      "mainClass": "sample.Main",
-      "projectName": "Library-Management-System-KNK_5f06137",
-      "vmArgs": "--module-path \"C:\\Program Files (x86)\\javafx-sdk-22\\lib\" --add-modules javafx.controls,javafx.fxml"
-    },
-    {
-      "type": "java",
       "name": "Current File",
       "request": "launch",
       "mainClass": "${file}",
@@ -23,8 +15,8 @@
       "type": "java",
       "name": "Main",
       "request": "launch",
-      "mainClass": "Library.Managment.System.KNK/sample.Main",
-      "projectName": "Library-Management-System-KNK_5f06137",
+      "mainClass": "sample.Main",
+      "projectName": "EduLib_System_dcc85f4",
       "vmArgs": "--module-path \"C:\\Program Files (x86)\\javafx-sdk-22\\lib\" --add-modules javafx.controls,javafx.fxml"
     }
   ]

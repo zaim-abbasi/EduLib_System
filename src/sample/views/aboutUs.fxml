@@ -16,7 +16,7 @@
          <Image url="@../resources/images/uni-logo.png"/>
       </ImageView>
    </VBox>
-   <Label layoutX="311.0" layoutY="14.0" prefHeight="51.0" prefWidth="280.0" text="Made by a group of FIEK Students:">
+   <Label layoutX="311.0" layoutY="14.0" prefHeight="51.0" prefWidth="280.0" text="EduLib System: ">
       <font>
          <Font size="18.0"/>
       </font>
@@ -54,7 +54,7 @@
       </Label>
    </VBox>
    <VBox alignment="CENTER" layoutX="225.0" layoutY="152.0" prefHeight="165.0" prefWidth="244.0">
-      <Label prefHeight="45.0" prefWidth="231.0" text="Check our project on GitHub:">
+      <Label prefHeight="45.0" prefWidth="231.0" text="">
          <font>
             <Font size="16.0"/>
          </font>
@@ -62,8 +62,8 @@
             <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
          </padding>
       </Label>
-      <Button mnemonicParsing="false" onAction="#loadGitHub" prefHeight="37.0" prefWidth="151.0"
-              style="-fx-background-color: #929FB9;" text="GitHub">
+      <Button mnemonicParsing="false" onAction="" prefHeight="37.0" prefWidth="151.0"
+              style="-fx-background-color: #929FB9;" text="">
          <VBox.margin>
             <Insets top="10.0"/>
          </VBox.margin>

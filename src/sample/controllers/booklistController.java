@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 
 public class booklistController implements Initializable {
 
-    DatabaseHandler databaseHandler ;
+    DatabaseHandler databaseHandler;
     ObservableList<viewMembersController.Member> list = FXCollections.observableArrayList();
     @FXML
     private TableView<Book> tableView;
@@ -47,68 +47,58 @@ public class booklistController implements Initializable {
     private TableColumn<Book, Boolean> AvailabilityColumn;
 
     public void deleteBookOption(ActionEvent actionEvent) {
-        //Fetch the selected row
-        Book selectedForDeletion = tableView.getSelectionModel().getSelectedItem();
-        if (selectedForDeletion == null) {
-            //AlertMaker.showErrorMessage("No member selected", "Please select a member for deletion.");
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("No book selected ! Please select a book for deletion.");
-            alert.showAndWait();
+        Book selectedBook = tableView.getSelectionModel().getSelectedItem();
+        if (selectedBook == null) {
+            showAlert("No book selected", "Please select a book for deletion.", Alert.AlertType.ERROR);
             return;
         }
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Deleting Book");
-        alert.setContentText("Are you sure you want to delete " + selectedForDeletion.getTitle()+"?");
-        Optional<ButtonType> answer = alert.showAndWait();
 
-        if(answer.get() == ButtonType.OK){
-            //Delete Book
-            Boolean result = DatabaseHandler.getInstance().deleteBook(selectedForDeletion);
-            if(result){
-                Alert alert2 = new Alert(Alert.AlertType.INFORMATION);
-                alert2.setHeaderText("SUCCESS");
-                alert2.setContentText("Book Deleted!");
-                alert2.showAndWait();
-                list.remove(selectedForDeletion);
-            }else{
-                Alert alert3 = new Alert(Alert.AlertType.ERROR);
-                alert3.setHeaderText("Error");
-                alert3.setContentText("Book could not be Deleted!");
-                alert3.showAndWait();
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Deleting Book");
+        confirmAlert.setContentText("Are you sure you want to delete " + selectedBook.getTitle() + "?");
+        Optional<ButtonType> answer = confirmAlert.showAndWait();
+
+        if (answer.filter(buttonType -> buttonType == ButtonType.OK).isPresent()) {
+            Boolean deletionResult = DatabaseHandler.getInstance().deleteBook(selectedBook);
+            showAlert(deletionResult ? "Book Deleted!" : "Error",
+                    deletionResult ? "The selected book has been deleted." : "Book could not be deleted.",
+                    deletionResult ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR);
+            if (deletionResult) {
+                list.remove(selectedBook);
             }
-        }else{
-            Alert alert1 = new Alert(Alert.AlertType.ERROR);
-            alert1.setHeaderText("ERROR");
-            alert1.setContentText("Deletion Cancelled");
-            alert1.showAndWait();
+        } else {
+            showAlert("Deletion Cancelled", "Book deletion process cancelled.", Alert.AlertType.ERROR);
         }
     }
 
-    public void editBookOption(ActionEvent actionEvent) {
-        Book selectedForEdit = tableView.getSelectionModel().getSelectedItem();
+    private void showAlert(String header, String content, Alert.AlertType alertType) {
+        Alert alert = new Alert(alertType);
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
 
-        if (selectedForEdit == null) {
-            //AlertMaker.showErrorMessage("No member selected", "Please select a member for deletion.");
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setHeaderText("ERROR");
-            alert.setContentText("No book selected ! Please select a book for edit-ing.");
-            alert.showAndWait();
+    public void editBookOption(ActionEvent actionEvent) {
+        Book selectedBook = tableView.getSelectionModel().getSelectedItem();
+
+        if (selectedBook == null) {
+            showAlert("No book selected", "Please select a book for editing.", Alert.AlertType.ERROR);
             return;
         }
+
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/sample/views/addBook.fxml"));
-
             Parent parent = loader.load();
 
-            addBookController controller = (addBookController) loader.getController();
-            controller.inflatedBUI(selectedForEdit);
-            Stage stage = new  Stage(StageStyle.DECORATED);
+            addBookController controller = loader.getController();
+            controller.inflatedBUI(selectedBook);
+
+            Stage stage = new Stage(StageStyle.DECORATED);
             stage.setTitle("Edit Book");
             stage.setScene(new Scene(parent));
             stage.show();
 
-        } catch (IOException ex){
+        } catch (IOException ex) {
             Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -116,20 +106,21 @@ public class booklistController implements Initializable {
     public void handleRefresh(ActionEvent actionEvent) {
         loadData();
     }
+
     public static class Book {
         private final SimpleStringProperty BookID;
         private final SimpleStringProperty Title;
         private final SimpleStringProperty Author;
-        private final SimpleStringProperty Publisher ;
-        private final SimpleIntegerProperty Quantity ;
-        private final SimpleBooleanProperty Availability ;
+        private final SimpleStringProperty Publisher;
+        private final SimpleIntegerProperty Quantity;
+        private final SimpleBooleanProperty Availability;
 
-
-        public Book ( String BookID ,  String Title , String Author , String Publisher , Integer Quantity, Boolean Availability){
+        public Book(String BookID, String Title, String Author, String Publisher, Integer Quantity,
+                Boolean Availability) {
             this.BookID = new SimpleStringProperty(BookID);
             this.Title = new SimpleStringProperty(Title);
-            this.Author=new SimpleStringProperty(Author);
-            this.Publisher =new SimpleStringProperty(Publisher);
+            this.Author = new SimpleStringProperty(Author);
+            this.Publisher = new SimpleStringProperty(Publisher);
             this.Quantity = new SimpleIntegerProperty(Quantity);
             this.Availability = new SimpleBooleanProperty(Availability);
 
@@ -176,22 +167,23 @@ public class booklistController implements Initializable {
         AvailabilityColumn.setCellValueFactory(new PropertyValueFactory<>("Availability"));
 
     }
+
     private void loadData() {
         ObservableList<Book> list = FXCollections.observableArrayList();
         DatabaseHandler handler = DatabaseHandler.getInstance();
-        String  qu = "SELECT * FROM addBook";
-        ResultSet rs = handler.execQuery(qu);
+        String query = "SELECT * FROM addBook";
+        ResultSet resultSet = handler.execQuery(query);
+
         try {
-            while (rs.next()) {
-                String BookID = rs.getString("id");
-                String Title = rs.getString("title");
-                String Author = rs.getString("author");
-                String Publisher= rs.getString("publisher");
-                Integer Quantity = rs.getInt("quantity");
-                Boolean Availability = rs.getBoolean("isAvail");
+            while (resultSet.next()) {
+                String bookID = resultSet.getString("id");
+                String title = resultSet.getString("title");
+                String author = resultSet.getString("author");
+                String publisher = resultSet.getString("publisher");
+                int quantity = resultSet.getInt("quantity");
+                boolean availability = resultSet.getBoolean("isAvail");
 
-                list.add(new Book(BookID, Title,Author, Publisher,Quantity,Availability));
-
+                list.add(new Book(bookID, title, author, publisher, quantity, availability));
             }
         } catch (SQLException ex) {
             Logger.getLogger(addBookController.class.getName()).log(Level.SEVERE, null, ex);
@@ -199,13 +191,12 @@ public class booklistController implements Initializable {
 
         tableView.setItems(list);
     }
+
     @FXML
     private void addNewBook(javafx.event.ActionEvent actionEvent) {
 
         loadWindow("/sample/views/addBook.fxml", "Add Book");
     }
-
-
 
     void loadWindow(String loc, String title) {
         try {
